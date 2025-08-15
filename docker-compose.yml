@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  nonax-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nonax-server
+    ports:
+      - "8443:8443"
+    environment:
+      - SERVER_ADDR=:8443
+      - UPLOAD_DIR=./uploads
+      - SERVER_API_TOKEN=change-me-server-token
+      - CLIENT_TOKEN=change-me-client-token
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8443/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

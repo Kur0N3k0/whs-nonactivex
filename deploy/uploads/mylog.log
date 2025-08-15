@@ -1,0 +1,10 @@
+[InstallShield Silent]
+Version=v7.00
+File=Log File
+[ResponseResult]
+ResultCode=0
+[Application]
+Name=Realtek Ethernet Controller Driver
+Version=11.3.1022.2021
+Company=Realtek
+Lang=0412

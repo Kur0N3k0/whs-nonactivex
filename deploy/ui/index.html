@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Non-ActiveX Console</title>
+  <style>
+    :root { font-family: ui-sans-serif, system-ui; color-scheme: light dark; }
+    body { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+    .card { border: 1px solid #8883; border-radius: 16px; padding: 16px; box-shadow: 0 6px 20px #0001; }
+    button { padding: 10px 14px; border-radius: 12px; border: 1px solid #8883; cursor: pointer; }
+    input, select { padding: 8px 10px; border: 1px solid #8883; border-radius: 10px; width: 100%; }
+    /* .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } */
+    .muted { opacity: .75; }
+  </style>
+  <meta name="client-token" content="__CLIENT_TOKEN__"/>
+  <script src="/clientBridge.js"></script>
+</head>
+<body>
+  <h1>Non-ActiveX 파일 전송 콘솔</h1>
+  <div class="card">
+    <h2>클라이언트 연결</h2>
+    <p id="status" class="muted">확인 중…</p>
+    <button id="probeBtn">클라이언트 재탐지</button>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <h2>서버 파일 목록 → 클라이언트로 다운로드</h2>
+    <div class="row">
+      <select id="serverFiles"></select>
+      <!-- <input id="saveAs" placeholder="로컬 저장 경로 (예: C:\\Downloads\\file.bin)"/> -->
+    </div>
+    <div style="margin-top:12px;">
+      <button id="dlBtn">클라이언트에 다운로드</button>
+    </div>
+    <pre id="log" style="white-space:pre-wrap;margin-top:12px;"></pre>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <h2>로컬 파일 → 서버로 업로드</h2>
+    <input id="localPath" placeholder="클라이언트 측 파일 경로 (예: C:\\temp\\data.zip)"/>
+    <div style="margin-top:12px;">
+      <button id="upBtn">서버로 업로드</button>
+    </div>
+  </div>
+
+<script>
+  (async function () {
+    const token = document.querySelector('meta[name=client-token]').content;
+    const logEl = document.getElementById('log');
+    const statusEl = document.getElementById('status');
+    const filesEl = document.getElementById('serverFiles');
+
+    const bridge = new window.ClientBridge(token);
+
+    async function refreshFiles() {
+      const r = await fetch('/api/files');
+      const list = await r.json();
+      filesEl.innerHTML = "";
+      list.forEach(x => {
+        const o = document.createElement('option');
+        o.value = x.url;
+        o.textContent = `${x.name} (${x.size}B)`;
+        filesEl.appendChild(o);
+      });
+    }
+
+    document.getElementById('probeBtn').onclick = async () => {
+      const ok = await bridge.probe();
+      statusEl.textContent = ok ? `연결됨: ${bridge.baseURL}` : '클라이언트 미실행';
+    };
+
+    document.getElementById('dlBtn').onclick = async () => {
+      const url = filesEl.value; // /api/download/xxx
+      // const saveAs = document.getElementById('saveAs').value.trim();
+      // const res = await bridge.downloadFromServer(url, saveAs);
+      const res = await bridge.downloadFromServer(url);
+      logEl.textContent = JSON.stringify(res, null, 2);
+    };
+
+    document.getElementById('upBtn').onclick = async () => {
+      const localPath = document.getElementById('localPath').value.trim();
+      const res = await bridge.uploadLocalFile(localPath);
+      alert(res.ok ? "업로드 성공" : "업로드 실패");
+      location.reload();
+    };
+
+    const ok = await bridge.probe();
+    statusEl.textContent = ok ? `연결됨: ${bridge.baseURL}` : '클라이언트 미실행';
+    await refreshFiles();
+  })();
+</script>
+</body>
+</html>
